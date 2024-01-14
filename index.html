@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CORS</title>
+    <style>
+      article {
+        border: 1px solid #ccc;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      img {
+        height: auto;
+        width: 320px;
+        max-width: 100%;
+      }
+    </style>
+    <script type="module">
+      const URL = 'http://localhost:3001/movies'
+      function getMovies() {
+        return new Promise((resolve, reject) => {
+          fetch(URL)
+            .then(response => response.json())
+            .then(data => resolve(data))
+            .catch(error => reject(error))
+        })
+      }
+      function deleteMovies({ id }) {
+        return new Promise((resolve, reject) => {
+          fetch(`${URL}/${id}`, {
+            method: 'DELETE'
+          })
+            .then(data => {
+              if (data.ok) resolve(data)
+            })
+            .catch(error => reject(error))
+        })
+      }
+      function getMoviesHTML() {
+        return new Promise((resolve, reject) => {
+          getMovies()
+            .then(movies => {
+              let li, article, img, h2, p, button
+              const movieArticles = movies.map(movie => {
+                article = document.createElement('article')
+                img = document.createElement('img')
+                h2 = document.createElement('h2')
+                p = document.createElement('p')
+                button = document.createElement('button')
+
+                article.dataset.id = movie.id
+                button.textContent = 'Delete'
+                h2.textContent = movie.title
+                img.src = movie.poster
+                img.alt = movie.title
+                p.textContent = movie.year
+
+                article.appendChild(h2)
+                article.appendChild(img)
+                article.appendChild(p)
+                article.appendChild(button)
+
+                return article
+              })
+              resolve(movieArticles)
+            })
+            .catch(error => {
+              reject(error)
+            })
+        })
+      }
+
+      function displayMovies() {
+        const moviesList = getMoviesHTML()
+
+        const list = document.getElementById('list')
+        moviesList
+          .then(movies => {
+            movies.map(movie => {
+              list.appendChild(movie)
+            })
+          })
+          .catch(error => console.error(error))
+      }
+
+      function removeMovie(e) {
+        const article = e.target.closest('article')
+        const id = article.dataset.id
+
+        deleteMovies({ id })
+          .then(data => {
+            if (data.ok) article.remove()
+          })
+          .catch(error => console.error(error))
+      }
+
+      ;(function () {
+        document.addEventListener('click', e => {
+          if (e.target.matches('button')) {
+            removeMovie(e)
+          }
+        })
+        displayMovies()
+      })()
+    </script>
+  </head>
+  <body>
+    <h1>Movies</h1>
+    <ul id="list"></ul>
+  </body>
+</html>
